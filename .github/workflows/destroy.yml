@@ -1,0 +1,36 @@
+# name: Terraform Destroy
+
+# on:
+#   push:
+#     branches:
+#       - main  # Trigger destroy on pushes to the main branch, adjust as needed
+
+# jobs:
+#   terraform:
+#     runs-on: ubuntu-latest
+
+#     steps:
+#     - name: Checkout code
+#       uses: actions/checkout@v3
+
+#     - name: Set up Terraform
+#       uses: hashicorp/setup-terraform@v2
+
+
+#     - name: Cache Terraform provider binaries
+#       uses: actions/cache@v3
+#       with:
+#         path: |
+#           ~/.terraform.d/plugin-cache
+#         key: ${{ runner.os }}-terraform-${{ hashFiles('**/*.tf') }}
+#         restore-keys: |
+#           ${{ runner.os }}-terraform-
+
+#     - name: permission adjust 
+#       run: sudo chmod 600 PipeKeyPair.pem       
+
+#     - name: Terraform Init
+#       run: terraform init
+
+#     - name: Terraform Destroy
+#       run: terraform destroy -auto-approve

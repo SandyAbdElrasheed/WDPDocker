@@ -1,0 +1,72 @@
+name: WordPress with Docker
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v1
+
+      - name: Initialize Terraform
+        run: terraform init
+
+      - name: Plan Terraform changes
+        id: terraform-plan
+        # env:
+        #   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        #   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      
+        run: terraform plan -out=tfplan
+
+      - name: Apply Terraform changes
+        # env:
+        #   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        #   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: terraform apply -auto-approve tfplan 
+               
+      - name: check results
+        if: failure()
+        run: | 
+          echo "Terraform apply failed, destroying infra. now ..."   
+          terraform destroy -auto-approve
+
+      - name: Save Terraform State as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: terraform-state
+          path: terraform.tfstate
+          
+      - name: cleanup
+        if: always()
+        run: terraform workspace select default || terraform workspace new default
+
+      - name: permission adjust 
+        run: sudo chmod 600 PipeKeyPair.pem
+
+      - name: Delay before SCP command
+        run: sleep 240
+
+      - name: Terraform Output
+        id: terraform-output
+        run: echo "::set-output name=public_ip::$(terraform output -raw public_ip)"  
+
+      - name: Create directory on ec2 server
+        run: |
+          ssh -o StrictHostKeyChecking=no -i PipeKeyPair.pem ec2-user@${{ steps.terraform-output.outputs.public_ip }} "mkdir -p /home/ec2-user/WPDocker ."
+        
+      - name: copy files to server 
+        run: scp -o StrictHostKeyChecking=no -i PipeKeyPair.pem -r * ec2-user@${{ steps.terraform-output.outputs.public_ip  }}:/home/ec2-user/WPDocker
+
+      - name: Trigger the script
+        run: ssh -o StrictHostKeyChecking=no -i PipeKeyPair.pem  ec2-user@${{ steps.terraform-output.outputs.public_ip  }} nohup /home/ec2-user/WPDocker/run.sh &
