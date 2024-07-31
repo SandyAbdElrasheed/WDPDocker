@@ -9,9 +9,9 @@ terraform {
 
   
   backend "s3" {
-    bucket         = "your-tf-state-bucket"
-    key            = "terraform/state"
-    region         = "us-west-1"
+    bucket         = "sandymy-free-tier-bucket-unique"
+    key            = "terraform.tfstate"
+    region         = "us-east-1"
     dynamodb_table = "terraform-lock"
   }
 
