@@ -6,33 +6,6 @@ provider "aws" {
 }
 
 
-resource "aws_s3_bucket" "tf_bucket" {
-  bucket = "sandymy-free-tier-bucket-unique"  
- 
-}
-
-resource "aws_s3_bucket_versioning" "versioning" {
-  bucket = aws_s3_bucket.tf_bucket.id
-
-  versioning_configuration {
-    status = "Enabled"
-  }
-}
-
-resource "aws_dynamodb_table" "tf_lock" {
-  name         = "terraform-lock"
-  hash_key     = "LockID"
-  read_capacity = 1
-  write_capacity = 1
-
-  attribute {
-    name = "LockID"
-    type = "S"
-  }
-
-  billing_mode = "PROVISIONED"
-}
-
 
 resource "aws_vpc" "main" {
   cidr_block           = var.vpc_cidr_block
