@@ -41,6 +41,23 @@ jobs:
           echo "Terraform apply failed, destroying infra. now ..."   
           terraform destroy -auto-approve
 
+          A better solution than storing the backend configuration elsewhere, when running in a pipeline, is to generate the backend configuration on the fly just before the terraform init:
+
+      - name: Setup Terraform Backend
+        id: backend
+        run: |
+         cat > backend.tf << EOF
+         terraform {
+          backend "remote" {
+            organization = "Hashicorp"
+
+            workspaces {
+              name = "main"
+            }
+          }
+         }
+         EOF
+
       - name: Save Terraform State as artifact
         uses: actions/upload-artifact@v3
         with:
